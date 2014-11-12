@@ -1,4 +1,4 @@
 require "bundler/gem_tasks"
-require 'gem_release_tasks'
+require 'xn_gem_release_tasks'
 
-GemReleaseTasks.setup GemReleaseTasks, 'lib/gem_release_tasks/version.rb'
+XNGemReleaseTasks.setup XNGemReleaseTasks, 'lib/xn_gem_release_tasks/version.rb'

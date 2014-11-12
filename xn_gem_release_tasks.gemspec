@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'gem_release_tasks/version'
+require 'xn_gem_release_tasks/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "gem_release_tasks"
-  spec.version       = GemReleaseTasks::VERSION
+  spec.name          = "xn_gem_release_tasks"
+  spec.version       = XNGemReleaseTasks::VERSION
   spec.authors       = ["Darrick Wiebe"]
   spec.email         = ["dw@xnlogic.com"]
   spec.summary       = %q{Simple set of rake tasks for enforcing development and release consistency}
