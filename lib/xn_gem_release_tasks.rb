@@ -1,6 +1,17 @@
 require "xn_gem_release_tasks/version"
 require 'rake'
 
+module Bundler
+  class GemHelper
+    def perform_git_push(args = nil)
+      cmd = "git push origin master:master #{options}"
+      out, code = sh_with_code(cmd)
+      raise "Couldn't git push. `#{cmd}' failed with the following output:\n\n#{out}\n" unless code == 0
+    end
+  end
+end
+
+
 module XNGemReleaseTasks
   V = /(?<before>\s*VERSION\s*=\s*")(?<major>\d+)\.(?<minor>\d+)\.(?<point>\d+)(?:\.(?<pre>\w+))?(?<after>".*)/
 
