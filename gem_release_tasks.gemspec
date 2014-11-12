@@ -8,9 +8,11 @@ Gem::Specification.new do |spec|
   spec.version       = GemReleaseTasks::VERSION
   spec.authors       = ["Darrick Wiebe"]
   spec.email         = ["dw@xnlogic.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
-  spec.homepage      = ""
+  spec.summary       = %q{Simple set of rake tasks for enforcing development and release consistency}
+  spec.description   =
+  %q{Develop on .pre branches, only allow releases from non-.pre clean, up-to-date master. Designed to allow Travis CI to do the
+     push when on a release version, after passing tests.}
+  spec.homepage      = "https://xnlogic.com"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
