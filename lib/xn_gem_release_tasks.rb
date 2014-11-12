@@ -110,7 +110,7 @@ task :only_push_release => [:prepare_release_push, :_only_push_release]
 
 task :next_dev_cycle => [:is_clean, :set_development_version] do
   XNGemReleaseTasks.reload_version
-  sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
+  sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
 end
 
 task :local_release => [:only_push_release, :release, :next_dev_cycle]
