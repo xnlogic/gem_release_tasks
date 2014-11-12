@@ -3,7 +3,7 @@ require 'rake'
 
 module Bundler
   class GemHelper
-    def perform_git_push(args = nil)
+    def perform_git_push(options = '')
       cmd = "git push origin master:master #{options}"
       out, code = sh_with_code(cmd)
       raise "Couldn't git push. `#{cmd}' failed with the following output:\n\n#{out}\n" unless code == 0
