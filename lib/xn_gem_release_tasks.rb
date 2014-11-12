@@ -109,6 +109,7 @@ task :next_dev_cycle => [:is_clean, :set_development_version] do
   sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
 end
 
+task :local_release => [:only_push_release, :release]
 task :push_release => [:only_push_release, :next_dev_cycle]
 
 task :release => [:is_clean, :is_on_origin_master, :is_release_version]
