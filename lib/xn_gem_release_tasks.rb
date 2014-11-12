@@ -99,14 +99,14 @@ task :prepare_release_push => [:is_clean, :is_on_master, :is_up_to_date, :set_re
 task :_only_push_release do
   XNGemReleaseTasks.reload_version
   skip_ci = '[skip ci] ' if ENV['TRAVIS_SECURE_ENV_VARS']
-  sh "git add #{XNGemReleaseTasks::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
+  sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
 end
 
 task :only_push_release => [:prepare_release_push, :_only_push_release]
 
 task :next_dev_cycle => [:is_clean, :set_development_version] do
   XNGemReleaseTasks.reload_version
-  sh "git add #{XNGemReleaseTasks::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
+  sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
 end
 
 task :push_release => [:only_push_release, :next_dev_cycle]
