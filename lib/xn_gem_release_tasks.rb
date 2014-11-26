@@ -85,7 +85,7 @@ task :is_on_master do
 end
 
 task :is_on_origin_master do
-  sh "git log --pretty='%d' -n 1 | grep 'origin/master'"
+  sh "git log HEAD...origin/master | grep ."
 end
 
 task :is_up_to_date do
