@@ -85,7 +85,8 @@ task :is_on_master do
 end
 
 task :is_on_origin_master do
-  sh "git log HEAD...origin/master | grep ."
+  result = `git log HEAD...origin/master | grep . || echo ok`
+  fail "Not on origin/master" unless result.chomp == 'ok'
 end
 
 task :is_up_to_date do
