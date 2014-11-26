@@ -17,7 +17,7 @@ end
 
 
 module XNGemReleaseTasks
-  V = /(?<before>\s*VERSION\s*=\s*")(?<major>\d+)\.(?<minor>\d+)\.(?<point>\d+)(?:\.(?<pre>\w+))?(?<after>".*)/
+  V = /(?<before>\s*\bVERSION\s*=\s*")(?<major>\d+)\.(?<minor>\d+)\.(?<point>\d+)(?:\.(?<pre>\w+))?(?<after>".*)/
 
   def self.ensure_setup
     raise "Must run XNGemReleaseTasks.setup(LibModule, 'path/to/version.rb') first" unless NAMESPACE
@@ -113,7 +113,9 @@ task :prepare_release_push => [:is_clean, :is_on_master, :is_up_to_date, :set_re
 task :_only_push_release do
   XNGemReleaseTasks.reload_version
   skip_ci = '[skip ci] ' if ENV['TRAVIS_SECURE_ENV_VARS']
-  sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
+  if sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
+    sh "git push"
+  end
 end
 
 task :only_push_release => [:prepare_release_push, :_only_push_release]
