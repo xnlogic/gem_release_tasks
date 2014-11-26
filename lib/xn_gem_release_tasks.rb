@@ -56,7 +56,8 @@ module XNGemReleaseTasks
   end
 end
 
-task :set_release_version do
+desc "Ensures we are on a relesae version, and increments if we already are."
+task :increment_release_version do
   XNGemReleaseTasks.change_version do |line, before, major, minor, point, pre, after|
     if pre
       "#{before}#{major}.#{minor}.#{point}#{after}\n"
@@ -66,6 +67,14 @@ task :set_release_version do
   end
 end
 
+desc "Ensures we are on a release version, but does not increment version number"
+task :set_release_version do
+  XNGemReleaseTasks.change_version do |line, before, major, minor, point, pre, after|
+    "#{before}#{major}.#{minor}.#{point}#{after}\n"
+  end
+end
+
+desc "Increments a release version number and adds .pre. Does not increment a version that is already .pre."
 task :set_development_version do
   XNGemReleaseTasks.change_version do |line, before, major, minor, point, pre, after|
     if pre
