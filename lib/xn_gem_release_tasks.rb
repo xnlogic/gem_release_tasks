@@ -112,9 +112,11 @@ task :prepare_release_push => [:is_clean, :is_on_master, :is_up_to_date, :set_re
 
 task :_only_push_release do
   XNGemReleaseTasks.reload_version
-  skip_ci = '[skip ci] ' if ENV['TRAVIS_SECURE_ENV_VARS']
-  if sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
-    sh "git push"
+  if `git status | grep 'working directory clean'` == ''
+    skip_ci = '[skip ci] ' if ENV['TRAVIS_SECURE_ENV_VARS']
+    if sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '#{skip_ci}Version #{ XNGemReleaseTasks::NAMESPACE::VERSION }'"
+      sh "git push"
+    end
   end
 end
 
