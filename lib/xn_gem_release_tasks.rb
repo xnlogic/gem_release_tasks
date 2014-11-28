@@ -90,12 +90,16 @@ task :is_clean do
 end
 
 task :is_on_master do
-  sh "git status | grep 'On branch master'"
+  unless ENV['IGNORE_BRANCH'] == 'true'
+    sh "git status | grep 'On branch master'"
+  end
 end
 
 task :is_on_origin_master do
-  result = `git log HEAD...origin/master | grep . || echo ok`
-  fail "Not on origin/master" unless result.chomp == 'ok'
+  unless ENV['IGNORE_BRANCH'] == 'true'
+    result = `git log HEAD...origin/master | grep . || echo ok`
+    fail "Not on origin/master" unless result.chomp == 'ok'
+  end
 end
 
 task :is_up_to_date do
