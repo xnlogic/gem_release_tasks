@@ -56,6 +56,22 @@ module XNGemReleaseTasks
   end
 end
 
+task :validate_gemspec do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec.validate
+end
+
+def command(task_name, name, &block)
+  s = `which #{name}`
+  if s == ""
+    task(task_name, &block)
+  else
+    task task_name do
+      # noop
+    end
+  end
+end
+
 desc "Ensures we are on a relesae version, and increments if we already are."
 task :increment_release_version do
   XNGemReleaseTasks.change_version do |line, before, major, minor, point, pre, after|
@@ -129,6 +145,66 @@ task :only_push_release => [:prepare_release_push, :_only_push_release]
 task :next_dev_cycle => [:is_clean, :set_development_version] do
   XNGemReleaseTasks.reload_version
   sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
+end
+
+desc "Install tools to interact with s3"
+command(:install_aws_cli, '/usr/local/bin/aws') do
+  puts "Installing AWS CLI tools..."
+  `curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"`
+  `unzip -o awscli-bundle.zip`
+  `sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws`
+  `rm -rf awscli-bundle awscli-bundle.zip`
+end
+
+desc "Install Leiningen, the clojure build tool"
+command(:install_lein, '/usr/local/bin/lein') do
+  puts "Installing Leiningen..."
+  `curl "https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein" -o "/usr/local/bin/lein"`
+  `sudo chmod a+x /usr/local/bin/lein`
+end
+
+desc "Check that AWS access is configured"
+task :check_aws_credentials => [:install_aws_cli] do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  result = `aws s3 ls s3://#{gemspec.name}`
+  if result.to_s.include? "credentials"
+        puts "Credentials missing. Run `aws configure` to add them or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
+  end
+end
+
+desc "Check s3 to see if the gem we're building already exists"
+task :validate_unique_gem => [:install_aws_cli,:check_aws_credentials] do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  unless gemspec.version.to_s.include? "pre"
+    result = `aws s3 ls s3://#{gemspec.name}/gems/#{gemspec.name}-#{gemspec.version}-java.gem`
+    if result.to_s.include? "#{gemspec.name}-#{gemspec.version}-java.gem"
+       fail "Non-pre gem already exists on s3, only pre gems can be overwritten"
+    end
+  end
+end
+
+task :validate_major_push do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  unless gemspec.version.to_s.include? "pre"
+    Rake::Task['is_clean'].invoke
+    Rake::Task['is_on_master'].invoke
+    Rake::Task['is_up_to_date'].invoke
+  end
+end
+
+desc "Pull the repo, rebuild and push to s3"
+task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :build] do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  puts "Running rspec tests..."
+  `bundle exec rspec`
+  puts "Pulling s3 repo and updating contents..."
+  `mkdir -p repo/gems`
+  `aws s3 sync s3://#{gemspec.name} repo`
+  `cp pkg/#{gemspec.name}-#{gemspec.version}-java.gem repo/gems/`
+  puts "Rebuilding gem index..."
+  `gem generate_index -d repo`
+  puts "Pushing to s3 bucket #{gemspec.name}..."
+  `aws s3 sync repo s3://#{gemspec.name}`
 end
 
 desc "Release a new version locally rather than after a successful Travis build"
