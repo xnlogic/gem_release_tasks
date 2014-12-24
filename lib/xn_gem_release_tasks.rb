@@ -168,7 +168,7 @@ task :env do
     else
       profile = "#{home}/.bashrc"
     end
-    `echo 'export PATH="$HOME/bin:$PATH"' >> #{profile} && source #{profile}`
+    `echo 'export PATH="$PATH:$HOME/bin"' >> #{profile} && source #{profile}`
   end
 end
 
