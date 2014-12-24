@@ -23,6 +23,13 @@ module XNGemReleaseTasks
     raise "Must run XNGemReleaseTasks.setup(LibModule, 'path/to/version.rb') first" unless NAMESPACE
   end
 
+  require 'rspec/core/rake_task'
+
+  RSpec::Core::RakeTask.new(:spec) do |spec|
+    spec.rspec_path = 'bin/rspec'
+    spec.pattern = FileList['spec/**/*_spec.rb']
+  end
+
   def self.change_version
     ensure_setup
     f = File.read(NAMESPACE::VERSION_FILE)
