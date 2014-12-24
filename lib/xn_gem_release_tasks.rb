@@ -26,8 +26,10 @@ module XNGemReleaseTasks
   require 'rspec/core/rake_task'
 
   RSpec::Core::RakeTask.new(:spec) do |spec|
-    spec.rspec_path = 'bin/rspec'
-    spec.pattern = FileList['spec/**/*_spec.rb']
+    if File.exist?('bin/rspec') && File.directory?('spec')
+      spec.rspec_path = 'bin/rspec'
+      spec.pattern = FileList['spec/**/*_spec.rb']
+    end
   end
 
   def self.change_version
@@ -154,27 +156,59 @@ task :next_dev_cycle => [:is_clean, :set_development_version] do
   sh "git add #{XNGemReleaseTasks::NAMESPACE::VERSION_FILE} && git commit -m '[skip ci] New development cycle with version #{ XNGemReleaseTasks::NAMESPACE::VERSION }' && git push"
 end
 
+desc "Configure environment"
+task :env do
+  path = `echo $PATH`
+  home = `echo $HOME`
+  unless path.include? "#{home}/bin"
+    puts "Configuring path..."
+    `mkdir -p $HOME/bin`
+    if File.exist? "#{home}/.zshrc"
+      profile = "#{home}/.zshrc"
+    else
+      profile = "#{home}/.bashrc"
+    end
+    `echo 'export PATH="$HOME/bin:$PATH"' >> #{profile} && source #{profile}`
+  end
+end
+
 desc "Install tools to interact with s3"
-command(:install_aws_cli, '/usr/local/bin/aws') do
+command(:install_aws_cli, '$HOME/bin/aws') do
+  Rake::Task['env'].invoke
   puts "Installing AWS CLI tools..."
   `curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"`
   `unzip -o awscli-bundle.zip`
-  `sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws`
+  `./awscli-bundle/install -i $HOME/bin/aws`
   `rm -rf awscli-bundle awscli-bundle.zip`
+  `aws help`
 end
 
 desc "Install Leiningen, the clojure build tool"
-command(:install_lein, '/usr/local/bin/lein') do
-  puts "Installing Leiningen..."
-  `curl "https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein" -o "/usr/local/bin/lein"`
-  `sudo chmod a+x /usr/local/bin/lein`
+command(:install_lein, '$HOME/bin/lein') do
+  if File.exist? 'project.clj'
+    Rake::Task['env'].invoke
+    puts "Installing Leiningen..."
+    `curl "https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein" -o "$HOME/bin/lein"`
+    `chmod a+x $HOME/bin/lein`
+    `lein`
+  end
+end
+
+desc "Run Leiningen tests"
+task :lein_test => [:install_lein] do
+  if File.exist? 'project.clj'
+    puts "Running Leiningen tests..."
+    `lein test`
+  else
+    puts "Not a Clojure project"
+  end
 end
 
 desc "Check that AWS access is configured"
 task :check_aws_credentials => [:install_aws_cli] do
   gemspec = eval(File.read(Dir['*.gemspec'].first))
   result = `aws s3 ls s3://#{gemspec.name}`
-  if result.to_s.include? "credentials"
+  if result.to_s.include?("credentials")
         puts "Credentials missing. Run `aws configure` to add them or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
   end
 end
@@ -184,7 +218,7 @@ task :validate_unique_gem => [:install_aws_cli,:check_aws_credentials] do
   gemspec = eval(File.read(Dir['*.gemspec'].first))
   unless gemspec.version.to_s.include? "pre"
     result = `aws s3 ls s3://#{gemspec.name}/gems/#{gemspec.name}-#{gemspec.version}-java.gem`
-    if result.to_s.include? "#{gemspec.name}-#{gemspec.version}-java.gem"
+    if result.to_s.include?("#{gemspec.name}-#{gemspec.version}-java.gem")
        fail "Non-pre gem already exists on s3, only pre gems can be overwritten"
     end
   end
@@ -200,14 +234,19 @@ task :validate_major_push do
 end
 
 desc "Pull the repo, rebuild and push to s3"
-task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :build] do
+task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec] do
   gemspec = eval(File.read(Dir['*.gemspec'].first))
-  puts "Running rspec tests..."
-  `bundle exec rspec`
+  if defined?(gemspec.platform) && gemspec.platform != ''
+    gem = "#{gemspec.name}-#{gemspec.version}-#{gemspec.platform}.gem"
+  else
+    gem = "#{gemspec.name}-#{gemspec.version}.gem"
+  end
+  puts "Gem required, checking for presence..."
+  `test -f #{gem}`
   puts "Pulling s3 repo and updating contents..."
   `mkdir -p repo/gems`
   `aws s3 sync s3://#{gemspec.name} repo`
-  `cp pkg/#{gemspec.name}-#{gemspec.version}-java.gem repo/gems/`
+  `cp pkg/#{gem} repo/gems/`
   puts "Rebuilding gem index..."
   `gem generate_index -d repo`
   puts "Pushing to s3 bucket #{gemspec.name}..."
