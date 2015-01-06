@@ -207,9 +207,10 @@ end
 desc "Check that AWS access is configured"
 task :check_aws_credentials => [:install_aws_cli] do
   gemspec = eval(File.read(Dir['*.gemspec'].first))
-  result = `aws s3 ls s3://#{gemspec.name}`
-  if result.to_s.include?("credentials")
-        puts "Credentials missing. Run `aws configure` to add them or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
+  check = `aws s3 ls s3://#{gemspec.name} 2>&1`
+  puts check
+  if check.to_s.include?("credentials")
+      fail "Credentials missing. Run `aws configure` to add them or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
   end
 end
 
@@ -255,6 +256,7 @@ end
 
 desc "Pull the repo, rebuild and push to s3"
 task :repo_rebuild => [:check_aws_credentials] do
+  gemspec = eval(File.read(Dir['*.gemspec'].first))
   puts "Pulling s3 repo and updating contents..."
   `mkdir -p repo/gems`
   `aws s3 sync s3://#{gemspec.name} repo`
