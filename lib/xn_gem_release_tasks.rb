@@ -233,7 +233,7 @@ task :validate_major_push do
   end
 end
 
-desc "Pull the repo, rebuild and push to s3"
+desc "Build gem and push to s3"
 task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec] do
   gemspec = eval(File.read(Dir['*.gemspec'].first))
   if defined?(gemspec.platform) && gemspec.platform != ''
@@ -247,6 +247,17 @@ task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validat
   `mkdir -p repo/gems`
   `aws s3 sync s3://#{gemspec.name} repo`
   `cp pkg/#{gem} repo/gems/`
+  puts "Rebuilding gem index..."
+  `gem generate_index -d repo`
+  puts "Pushing to s3 bucket #{gemspec.name}..."
+  `aws s3 sync repo s3://#{gemspec.name}`
+end
+
+desc "Pull the repo, rebuild and push to s3"
+task :repo_rebuild => [:check_aws_credentials] do
+  puts "Pulling s3 repo and updating contents..."
+  `mkdir -p repo/gems`
+  `aws s3 sync s3://#{gemspec.name} repo`
   puts "Rebuilding gem index..."
   `gem generate_index -d repo`
   puts "Pushing to s3 bucket #{gemspec.name}..."
