@@ -25,5 +25,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 2.10.0"
   spec.add_development_dependency "travis"
   spec.add_development_dependency "builder"
-  spec.add_development_dependency "coveralls"
 end
