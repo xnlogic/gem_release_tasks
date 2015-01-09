@@ -111,7 +111,11 @@ task :set_development_version do
 end
 
 task :is_clean do
-  sh "git status | grep 'working directory clean'"
+  if ENV['TRAVIS_BRANCH'] == 'master'
+    true
+  else
+    sh "git status | grep 'working directory clean'"
+  end
 end
 
 task :is_on_master do
@@ -136,7 +140,11 @@ task :is_on_origin_master do
 end
 
 task :is_up_to_date do
-  sh "git pull | grep 'Already up-to-date.'"
+  if ENV['TRAVIS_BRANCH'] == 'master'
+    true
+  else
+    sh "git pull | grep 'Already up-to-date.'"
+  end
 end
 
 task :is_release_version do
