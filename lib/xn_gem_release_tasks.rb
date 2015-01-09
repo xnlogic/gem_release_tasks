@@ -106,15 +106,23 @@ task :is_clean do
 end
 
 task :is_on_master do
-  unless ENV['IGNORE_BRANCH'] == 'true'
-    sh "git status | grep 'On branch master'"
+  if ENV['TRAVIS_BRANCH'] == 'master'
+    true
+  else
+    unless ENV['IGNORE_BRANCH'] == 'true'
+      sh "git status | grep 'On branch master'"
+    end
   end
 end
 
 task :is_on_origin_master do
-  unless ENV['IGNORE_BRANCH'] == 'true'
-    result = `git log HEAD...origin/master | grep . || echo ok`
-    fail "Not on origin/master" unless result.chomp == 'ok'
+  if ENV['TRAVIS_BRANCH'] == 'master'
+    true
+  else
+    unless ENV['IGNORE_BRANCH'] == 'true'
+      result = `git log HEAD...origin/master | grep . || echo ok`
+      fail "Not on origin/master" unless result.chomp == 'ok'
+    end
   end
 end
 
