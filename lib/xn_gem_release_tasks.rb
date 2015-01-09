@@ -63,10 +63,14 @@ module XNGemReleaseTasks
     self.const_set :NAMESPACE, namespace
     namespace.const_set :VERSION_FILE, version_file
   end
+
+  def self.gemspec
+    eval(File.read(Dir['*.gemspec'].first))
+  end
 end
 
 task :validate_gemspec do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   gemspec.validate
 end
 
@@ -222,7 +226,7 @@ end
 
 desc "Check that AWS access is configured"
 task :check_aws_credentials => [:install_aws_cli] do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   check = `aws s3 ls s3://#{gemspec.name} 2>&1`
   puts check
   if check.to_s.include?("credentials")
@@ -232,7 +236,7 @@ end
 
 desc "Check s3 to see if the gem we're building already exists"
 task :validate_unique_gem => [:install_aws_cli,:check_aws_credentials] do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   unless gemspec.version.to_s.include? "pre"
     result = `aws s3 ls s3://#{gemspec.name}/gems/#{gemspec.name}-#{gemspec.version}-java.gem`
     if result.to_s.include?("#{gemspec.name}-#{gemspec.version}-java.gem")
@@ -242,7 +246,7 @@ task :validate_unique_gem => [:install_aws_cli,:check_aws_credentials] do
 end
 
 task :validate_major_push do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   unless gemspec.version.to_s.include? "pre"
     Rake::Task['is_clean'].invoke
     Rake::Task['is_on_master'].invoke
@@ -252,7 +256,7 @@ end
 
 desc "Build gem and push to s3"
 task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec] do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   if defined?(gemspec.platform) && gemspec.platform != ''
     gem = "#{gemspec.name}-#{gemspec.version}-#{gemspec.platform}.gem"
   else
@@ -272,7 +276,7 @@ end
 
 desc "Pull the repo, rebuild and push to s3"
 task :repo_rebuild => [:check_aws_credentials] do
-  gemspec = eval(File.read(Dir['*.gemspec'].first))
+  gemspec = XNGemReleaseTasks.gemspec
   puts "Pulling s3 repo and updating contents..."
   `mkdir -p repo/gems`
   `aws s3 sync s3://#{gemspec.name} repo`
