@@ -263,6 +263,8 @@ task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validat
   `gem generate_index -d repo`
   puts "Pushing to s3 bucket #{gemspec.name}..."
   `aws s3 sync repo s3://#{gemspec.name}`
+  sh "git tag -f v#{ gemspec.version }"
+  sh "git push --tags"
 end
 
 desc "Pull the repo, rebuild and push to s3"
@@ -277,8 +279,19 @@ task :repo_rebuild => [:check_aws_credentials] do
   `aws s3 sync repo s3://#{gemspec.name}`
 end
 
+# Set a dependency to replace the :release task. For example, the following would cause :up to be used to
+# release instead of :release. That allows the local_release task to work in either case.
+#
+#   task release_with: :up
+#
+task :release_with do |this|
+  if this.prerequisites.empty?
+    Rake::Task[:release].invoke
+  end
+end
+
 desc "Release a new version locally rather than after a successful Travis build"
-task :local_release => [:only_push_release, :release, :next_dev_cycle]
+task :local_release => [:only_push_release, :release_with, :next_dev_cycle]
 
 desc "Push a release candidate to Travis CI to release if it builds successfully"
 task :push_release => [:only_push_release, :next_dev_cycle]
