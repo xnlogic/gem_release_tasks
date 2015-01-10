@@ -246,7 +246,9 @@ task :validate_major_push do
 end
 
 desc "Build gem and push to s3"
-task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec] do
+task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec, :_up]
+
+task :_up do
   gemspec = XNGemReleaseTasks.gemspec
   if defined?(gemspec.platform) && gemspec.platform != ''
     gem = "#{gemspec.name}-#{gemspec.version}-#{gemspec.platform}.gem"
