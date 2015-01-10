@@ -256,15 +256,15 @@ task :_up do
     gem = "#{gemspec.name}-#{gemspec.version}.gem"
   end
   puts "Gem required, checking for presence..."
-  `test -f #{gem}`
+  sh "test -f #{gem}"
   puts "Pulling s3 repo and updating contents..."
-  `mkdir -p repo/gems`
-  `aws s3 sync s3://#{gemspec.name} repo`
-  `cp pkg/#{gem} repo/gems/`
+  sh "mkdir -p repo/gems"
+  sh "aws s3 sync s3://#{gemspec.name} repo"
+  sh "cp pkg/#{gem} repo/gems/"
   puts "Rebuilding gem index..."
-  `gem generate_index -d repo`
+  sh "gem generate_index -d repo"
   puts "Pushing to s3 bucket #{gemspec.name}..."
-  `aws s3 sync repo s3://#{gemspec.name}`
+  sh "aws s3 sync repo s3://#{gemspec.name}"
   sh "git tag -f v#{ gemspec.version }"
   sh "git push -f origin v#{ gemspec.version }"
 end
