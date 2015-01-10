@@ -264,7 +264,7 @@ task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validat
   puts "Pushing to s3 bucket #{gemspec.name}..."
   `aws s3 sync repo s3://#{gemspec.name}`
   sh "git tag -f v#{ gemspec.version }"
-  sh "git push --tags"
+  sh "git push -f v#{ gemspec.version }"
 end
 
 desc "Pull the repo, rebuild and push to s3"
