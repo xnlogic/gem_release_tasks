@@ -256,7 +256,7 @@ task :_up do
     gem = "#{gemspec.name}-#{gemspec.version}.gem"
   end
   puts "Gem required, checking for presence..."
-  sh "test -f #{gem}"
+  `test -f #{gem}`
   puts "Pulling s3 repo and updating contents..."
   sh "mkdir -p repo/gems"
   sh "aws s3 sync s3://#{gemspec.name} repo"
