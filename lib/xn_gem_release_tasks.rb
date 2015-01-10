@@ -250,7 +250,7 @@ task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validat
 
 task :_up do
   gemspec = XNGemReleaseTasks.gemspec
-  if defined?(gemspec.platform) && gemspec.platform != ''
+  if defined?(gemspec.platform) and gemspec.platform != '' and gemspec.platform != 'ruby'
     gem = "#{gemspec.name}-#{gemspec.version}-#{gemspec.platform}.gem"
   else
     gem = "#{gemspec.name}-#{gemspec.version}.gem"
