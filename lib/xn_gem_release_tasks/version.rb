@@ -1,3 +1,3 @@
 module XNGemReleaseTasks
-  VERSION = "0.1.26.pre"
+  VERSION = "0.1.26"
 end
