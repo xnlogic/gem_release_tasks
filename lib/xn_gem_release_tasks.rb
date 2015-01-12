@@ -262,7 +262,7 @@ task :_up do
   sh "aws s3 sync s3://#{gemspec.name} repo"
   sh "cp pkg/#{gem} repo/gems/"
   puts "Rebuilding gem index..."
-  sh "gem generate_index -d repo"
+  sh "env BUNDLE_GEMFILE= BUNDLE_BIN_PATH= RUBYLIB= RUBYOPT= gem generate_index -d repo"
   puts "Pushing to s3 bucket #{gemspec.name}..."
   sh "aws s3 sync repo s3://#{gemspec.name}"
   sh "git tag -f v#{ gemspec.version }"
@@ -276,7 +276,7 @@ task :repo_rebuild => [:check_aws_credentials] do
   `mkdir -p repo/gems`
   `aws s3 sync s3://#{gemspec.name} repo`
   puts "Rebuilding gem index..."
-  `gem generate_index -d repo`
+  `env BUNDLE_GEMFILE= BUNDLE_BIN_PATH= RUBYLIB= RUBYOPT= gem generate_index -d repo`
   puts "Pushing to s3 bucket #{gemspec.name}..."
   `aws s3 sync repo s3://#{gemspec.name}`
 end
