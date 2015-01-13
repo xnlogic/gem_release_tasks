@@ -224,9 +224,12 @@ task :_up do
   else
     gem = "#{gemspec.name}-#{gemspec.version}.gem"
   end
-  config = YAML.load_file("#{ENV['HOME']}/.gemrc") rescue {}
-  sources = config[:sources] || config['sources'] || []
-  source = sources.grep(/^https:\/\/\w+:\w+@gems.xnlogic.com\/?$/).first
+  source = ENV['GEMINABOX']
+  unless source
+    config = YAML.load_file("#{ENV['HOME']}/.gemrc") rescue {}
+    sources = config[:sources] || config['sources'] || []
+    source = sources.grep(/^https:\/\/\w+:\w+@gems.xnlogic.com\/?$/).first
+  end
   raise "No authorized source pointing to https://gems.xnlogic.com found in your gem config" unless source
   sh "gem inabox -g #{source} pkg/#{gem}"
 end
