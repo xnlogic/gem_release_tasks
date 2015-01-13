@@ -1,5 +1,6 @@
 require "xn_gem_release_tasks/version"
 require 'rake'
+require 'yaml'
 
 module Bundler
   class GemHelper
@@ -183,17 +184,6 @@ task :env do
   end
 end
 
-desc "Install tools to interact with s3"
-command(:install_aws_cli, '$HOME/bin/aws') do
-  Rake::Task['env'].invoke
-  puts "Installing AWS CLI tools..."
-  `curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"`
-  `unzip -o awscli-bundle.zip`
-  `./awscli-bundle/install -i $HOME/bin/aws`
-  `rm -rf awscli-bundle awscli-bundle.zip`
-  `aws help`
-end
-
 desc "Install Leiningen, the clojure build tool"
 command(:install_lein, '$HOME/bin/lein') do
   if File.exist? 'project.clj'
@@ -215,27 +205,6 @@ task :lein_test => [:install_lein] do
   end
 end
 
-desc "Check that AWS access is configured"
-task :check_aws_credentials => [:install_aws_cli] do
-  gemspec = XNGemReleaseTasks.gemspec
-  check = `aws s3 ls s3://#{gemspec.name} 2>&1`
-  puts check
-  if check.to_s.include?("credentials")
-      fail "Credentials missing. Run `aws configure` to add them or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
-  end
-end
-
-desc "Check s3 to see if the gem we're building already exists"
-task :validate_unique_gem => [:install_aws_cli,:check_aws_credentials] do
-  gemspec = XNGemReleaseTasks.gemspec
-  unless gemspec.version.to_s.include? "pre"
-    result = `aws s3 ls s3://#{gemspec.name}/gems/#{gemspec.name}-#{gemspec.version}-java.gem`
-    if result.to_s.include?("#{gemspec.name}-#{gemspec.version}-java.gem")
-       fail "Non-pre gem already exists on s3, only pre gems can be overwritten"
-    end
-  end
-end
-
 task :validate_major_push do
   gemspec = XNGemReleaseTasks.gemspec
   unless gemspec.version.to_s.include? "pre"
@@ -246,7 +215,7 @@ task :validate_major_push do
 end
 
 desc "Build gem and push to s3"
-task :up => [:install_aws_cli, :validate_unique_gem, :validate_gemspec, :validate_major_push, :lein_test, :build, :spec, :_up]
+task :up => [:validate_gemspec, :validate_major_push, :lein_test, :build, :spec, :_up]
 
 task :_up do
   gemspec = XNGemReleaseTasks.gemspec
@@ -255,30 +224,11 @@ task :_up do
   else
     gem = "#{gemspec.name}-#{gemspec.version}.gem"
   end
-  puts "Gem required, checking for presence..."
-  `test -f #{gem}`
-  puts "Pulling s3 repo and updating contents..."
-  sh "mkdir -p repo/gems"
-  sh "aws s3 sync s3://#{gemspec.name} repo"
-  sh "cp pkg/#{gem} repo/gems/"
-  puts "Rebuilding gem index..."
-  sh "env BUNDLE_GEMFILE= BUNDLE_BIN_PATH= RUBYLIB= RUBYOPT= gem generate_index -d repo"
-  puts "Pushing to s3 bucket #{gemspec.name}..."
-  sh "aws s3 sync repo s3://#{gemspec.name}"
-  sh "git tag -f v#{ gemspec.version }"
-  sh "git push -f origin v#{ gemspec.version }"
-end
-
-desc "Pull the repo, rebuild and push to s3"
-task :repo_rebuild => [:check_aws_credentials] do
-  gemspec = XNGemReleaseTasks.gemspec
-  puts "Pulling s3 repo and updating contents..."
-  `mkdir -p repo/gems`
-  `aws s3 sync s3://#{gemspec.name} repo`
-  puts "Rebuilding gem index..."
-  `env BUNDLE_GEMFILE= BUNDLE_BIN_PATH= RUBYLIB= RUBYOPT= gem generate_index -d repo`
-  puts "Pushing to s3 bucket #{gemspec.name}..."
-  `aws s3 sync repo s3://#{gemspec.name}`
+  config = YAML.load_file("#{ENV['HOME']}/.gemrc") rescue {}
+  sources = config[:sources] || config['sources'] || []
+  source = sources.grep(/^https:\/\/\w+:\w+@gems.xnlogic.com\/?$/).first
+  raise "No authorized source pointing to https://gems.xnlogic.com found in your gem config" unless source
+  sh "gem inabox -g #{source} pkg/#{gem}"
 end
 
 # Set a dependency to replace the :release task. For example, the following would cause :up to be used to
