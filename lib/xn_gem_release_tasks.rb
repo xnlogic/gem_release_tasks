@@ -246,9 +246,11 @@ task :release_with do |this|
 end
 
 desc "Release a new version locally rather than after a successful Travis build"
-task :local_release => [:only_push_release, :release_with, :next_dev_cycle]
+task :local_release => [:only_push_release, :release_with, :next_dev_cycle, :after_release]
 
 desc "Push a release candidate to Travis CI to release if it builds successfully"
-task :push_release => [:only_push_release, :next_dev_cycle]
+task :push_release => [:only_push_release, :next_dev_cycle, :after_release]
 
 task :release => [:is_clean, :is_on_origin_master, :is_release_version]
+
+task :after_release
