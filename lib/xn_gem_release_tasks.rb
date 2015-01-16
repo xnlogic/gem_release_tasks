@@ -230,8 +230,9 @@ task :_up do
     sources = config[:sources] || config['sources'] || []
     source = sources.grep(/^https:\/\/\w+:\w+@gems.xnlogic.com\/?$/).first
   end
+  overwrite = "-o" if gemspec.version =~ /\.pre/
   raise "No authorized source pointing to https://gems.xnlogic.com found in your gem config" unless source
-  sh "gem inabox -g #{source} pkg/#{gem}"
+  sh "gem inabox #{overwrite} -g #{source} pkg/#{gem}"
 end
 
 # Set a dependency to replace the :release task. For example, the following would cause :up to be used to
